@@ -5,16 +5,13 @@ import re
 
 
 # create a separate build directory
-VariantDir('build', 'src', duplicate=0)
 VariantDir('build_benchmark', 'benchmark', duplicate=0)
 VariantDir('build_test', 'test', duplicate=0)
-VariantDir('build_main', 'main', duplicate=0)
 
 
 # the compiler and linker flags for the testing C++ environment
 TEST_FLAGS = [
-    '-std=c++17',
-    '-pthread',
+    '-std=c++11',
     '-march=native',
     '-pipe',
     '-pedantic',
@@ -23,7 +20,7 @@ TEST_FLAGS = [
 
 
 # includes for use in production code
-INCLUDES = ['#include', '#vendor/hopscotch_map/include', '#vendor/robin-map/include', '#vendor/sparse-map/include']
+INCLUDES = ['#include']
 # includes for use in testing and benchmarking code
 TEST_INCLUDES = ['#vendor/Catch2/single_include/catch2']
 
@@ -41,25 +38,13 @@ TESTING_ENV = Environment(
 
 # the compiler and linker flags for the production C++ environment
 PROD_FLAGS = [
-    '-std=c++17',
-    '-pthread',
+    '-std=c++11',
     '-O2',
     '-march=native',
     '-pipe',
     '-pedantic',
     '-Wall'
 ]
-
-
-# Create the production environment
-PRODUCTION_ENV = Environment(
-    ENV=os.environ,
-    CXX='g++',
-    CPPFLAGS=['-Wno-unused-value'],
-    CXXFLAGS=PROD_FLAGS,
-    LINKFLAGS=PROD_FLAGS,
-    CPPPATH=INCLUDES,
-)
 
 
 # Create the benchmarking environment
@@ -96,7 +81,6 @@ def find_source_files(src_dir, build_dir):
 SRC = find_source_files('src', 'build')
 # create separate object files for testing and production environments
 TEST_SRC = [TESTING_ENV.Object(f.replace('.cpp', '') + '-test', f) for f in SRC]
-PROD_SRC = [PRODUCTION_ENV.Object(f.replace('.cpp', '') + '-prod', f) for f in SRC]
 BENCHMARK_SRC = [BENCHMARK_ENV.Object(f.replace('.cpp', '') + '-bench', f) for f in SRC]
 
 
@@ -144,13 +128,3 @@ for benchmark in find_source_files('benchmark', 'build_benchmark'):
     shell_name = benchmark.replace('build_', '')
     benchmark_alias = Alias(shell_name, [program], program[0].path)
     AlwaysBuild(benchmark_alias)
-
-
-#
-# MARK: Main
-#
-
-
-for main in find_source_files('main', 'build_main'):
-    binary_name = main.replace('.cpp', '')
-    program = PRODUCTION_ENV.Program(binary_name, [main] + PROD_SRC)
